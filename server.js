@@ -29,7 +29,15 @@ io.on('connection', (socket) = {
         players[socket.id] = { ...players[socket.id], ...data };
         socket.broadcast.emit('playerMoved', players[socket.id]);
     });
-    
+    // Стрельба
+socket.on('shoot', (data) => {
+    socket.broadcast.emit('bullet', {
+        id: socket.id,
+        x: data.x,
+        y: data.y,
+        dir: data.dir
+    });
+});
      Отключение
     socket.on('disconnect', () = {
         delete players[socket.id];
@@ -40,4 +48,5 @@ io.on('connection', (socket) = {
  Запуск
 server.listen(process.env.PORT  3000, () = {
     console.log('🎮 Игра запущена!');
+
 });
