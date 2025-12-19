@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🎮 Простой шутер</title>
+    <style>
+        body { margin: 0; background: #222; }
+        canvas { display: block; background: #111; }
+        #info { 
+            position: absolute; 
+            top: 10px; 
+            left: 10px; 
+            color: white; 
+            font-family: Arial; 
+        }
+    </style>
+</head>
+<body>
+    <div id="info">Игроков: <span id="count">1</span></div>
+    <canvas id="game" width="800" height="600"></canvas>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        // ========== НАСТРОЙКИ ==========
+        const canvas = document.getElementById('game');
+        const ctx = canvas.getContext('2d');
+        const socket = io();
+        let players = {};
+        let myId = null;
+        let keys = {};
+
+        // ========== УПРАВЛЕНИЕ ==========
+        document.addEventListener('keydown', e => keys[e.key] = true);
+        document.addEventListener('keyup', e => keys[e.key] = false);
+
+        // ========== СЕТЬ ==========
+        socket.on('connect', () => {
+            console.log('✅ Подключено!');
+            myId = socket.id;
+        });
+
+        socket.on('players', (data) => {
+            players = data;
+            updateCount();
+        });
+
+        socket.on('newPlayer', (player) => {
+            players[player.id] = player;
+            updateCount();
+        });
+
+        socket.on('playerMoved', (player) => {
+            players[player.id] = player;
+        });
+
+        socket.on('playerLeft', (id) => {
+            delete players[id];
+            updateCount();
+        });
+
+        // ========== ИГРА ==========
+        function update() {
+            if (!players[myId]) return;
+            
+            // Движение
+            let player = players[myId];
+            if (keys['w'] || keys['ц']) player.y -= 5;
+            if (keys['s'] || keys['ы']) player.y += 5;
+            if (keys['a'] || keys['ф']) player.x -= 5;
+            if (keys['d'] || keys['в']) player.x += 5;
+            
+            // Границы
+            player.x = Math.max(20, Math.min(780, player.x));
+            player.y = Math.max(20, Math.min(580, player.y));
+            
+            // Отправляем на сервер
+            socket.emit('move', { x: player.x, y: player.y });
+        }
+
+        function draw() {
+            // Очистка
+            ctx.fillStyle = '#111';
+            ctx.fillRect(0, 0, 800, 600);
+            
+            // Рисуем всех игроков
+            for (let id in players) {
+                let p = players[id];
+                ctx.fillStyle = p.color;
+                ctx.fillRect(p.x - 10, p.y - 10, 20, 20);
+                
+                // Имя
+                ctx.fillStyle = 'white';
+                ctx.font = '12px Arial';
+                ctx.fillText(p.id === myId ? 'ТЫ' : 'Игрок', p.x - 10, p.y - 15);
+            }
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function updateCount() {
+            document.getElementById('count').textContent = Object.keys(players).length;
+        }
+
+        // ========== ЗАПУСК ==========
+        gameLoop();
+    </script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: simple-shooter
+    env: node
+    buildCommand: npm install
+    startCommand: node server.js
