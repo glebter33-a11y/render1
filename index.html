@@ -67,7 +67,43 @@
             if (keys['s'] || keys['ы']) player.y += 5;
             if (keys['a'] || keys['ф']) player.x -= 5;
             if (keys['d'] || keys['в']) player.x += 5;
+
             
+            // Стрельба по клику
+canvas.addEventListener('click', (e) => {
+    let player = players[myId];
+    if (!player) return;
+    
+    let dir = Math.atan2(
+        e.clientY - canvas.offsetTop - player.y,
+        e.clientX - canvas.offsetLeft - player.x
+    );
+    
+    socket.emit('shoot', {
+        x: player.x,
+        y: player.y,
+        dir: dir
+    });
+});
+
+// Отрисовка пуль
+let bullets = [];
+socket.on('bullet', (bullet) => {
+    bullets.push(bullet);
+});
+
+// В draw() добавьте:
+bullets.forEach((b, i) => {
+    b.x += Math.cos(b.dir) * 10;
+    b.y += Math.sin(b.dir) * 10;
+    ctx.fillStyle = 'yellow';
+    ctx.fillRect(b.x-3, b.y-3, 6, 6);
+    
+    // Удаление старых пуль
+    if (b.x < 0 || b.x > 800 || b.y < 0 || b.y > 600) {
+        bullets.splice(i, 1);
+    }
+});
             // Границы
             player.x = Math.max(20, Math.min(780, player.x));
             player.y = Math.max(20, Math.min(580, player.y));
@@ -108,4 +144,5 @@
         gameLoop();
     </script>
 </body>
+
 </html>
